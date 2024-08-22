@@ -7,6 +7,7 @@ from PyQt6.QtCore import pyqtSlot, Qt
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QTextEdit, QPushButton, QInputDialog, QListWidget, \
     QListWidgetItem
 from PyQt6.QtGui import QFont
+from bs4 import BeautifulSoup
 
 class HTMLListWidgetItem(QWidget):
     def __init__(self, html_content, parent=None):
@@ -48,6 +49,8 @@ class MyCustomWindow(QDialog):
         self.setWindowTitle("Example Sentences")
         self.resize(700, 400)
 
+        self.setWindowFlags(Qt.WindowType.Window)
+
         if geometry:
             self.setGeometry(geometry)
 
@@ -84,6 +87,8 @@ class MyCustomWindow(QDialog):
             layout.addWidget(buttonr)
 
         self.setLayout(layout)
+
+        self.sentence_list.itemDoubleClicked.connect(self.insert_and_close)
 
         if loadstate == 1:
             self.on_button_clicked(selected_text)
@@ -136,12 +141,18 @@ class MyCustomWindow(QDialog):
         # Connect item click event to sentence insertion
         self.sentence_list.itemClicked.connect(self.insert_sentence_into_field)
 
+    def insert_and_close(self, item):
+        self.insert_sentence_into_field(item)
+        self.close()
+
     def insert_sentence_into_field(self, item):
         # Get the custom widget associated with the clicked item
         widget = self.sentence_list.itemWidget(item)
 
         # Extract the plain text from the widget
-        sentence = widget.label.text()
+        html_sentence = widget.label.text()
+        soup = BeautifulSoup(html_sentence, "html.parser")
+        sentence = soup.get_text()
 
         # Get the selected field name from the dropdown
         field_name = self.field_dropdown.currentText()
